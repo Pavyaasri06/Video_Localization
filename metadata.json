@@ -1,0 +1,6 @@
+{
+  "name": "Video Localization Orchestrator",
+  "description": "Upload a video, extract and translate its voice content using Gemini AI, and perform automated lip-synced localization via HeyGen.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
