@@ -352,13 +352,21 @@ Specifically, make sure to generate it in the colloquial style of: "${langCfg.st
 
 Return ONLY the clean, translated script text and absolutely nothing else (no timestamps, meta annotations, speaker headers, explanation paragraphs, or introduction labels). Just output the fluentTranslatedScript.`;
 
-    addLog(jobId, `📖 Prompting model ('gemini-2.0-flash-lite') to perform conversational script trans-creation...`, "info");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite",
-      contents: promptMessage,
-    });
-
-    const translatedText = response.text?.trim() || "";
+    addLog(jobId, `📖 Calling Gemini REST API for conversational script trans-creation...`, "info");
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: promptMessage }] }] }),
+      }
+    );
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      throw new Error(`Gemini API error (${geminiRes.status}): ${errText}`);
+    }
+    const geminiData = await geminiRes.json();
+    const translatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
     if (!translatedText) {
       throw new Error("Gemini returned an empty conversational translation transcript.");
     }
