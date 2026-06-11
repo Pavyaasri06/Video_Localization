@@ -352,39 +352,21 @@ Specifically, make sure to generate it in the colloquial style of: "${langCfg.st
 
 Return ONLY the clean, translated script text and absolutely nothing else (no timestamps, meta annotations, speaker headers, explanation paragraphs, or introduction labels). Just output the fluentTranslatedScript.`;
 
-    addLog(jobId, `📖 Calling Gemini REST API for conversational script trans-creation...`, "info");
-    const GEMINI_MODELS = ["gemini-2.0-flash-lite", "gemini-2.5-flash-preview-05-20", "gemini-1.5-flash-latest"];
-    let translatedText = "";
-    for (const model of GEMINI_MODELS) {
-      let success = false;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptMessage }] }] }),
-          }
-        );
-        if (geminiRes.ok) {
-          const geminiData = await geminiRes.json();
-          translatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-          success = true;
-          addLog(jobId, `✅ Gemini responded via model: ${model}`, "success");
-          break;
-        }
-        const status = geminiRes.status;
-        if (status === 503 || status === 429) {
-          addLog(jobId, `⏳ Model ${model} busy (${status}), attempt ${attempt}/3 — retrying in ${attempt * 5}s...`, "warning");
-          await new Promise(r => setTimeout(r, attempt * 5000));
-        } else {
-          break;
-        }
+    addLog(jobId, `📖 Calling Gemini 2.5 Flash for conversational script trans-creation...`, "info");
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: promptMessage }] }] }),
       }
-      if (success) break;
-      addLog(jobId, `⚠️ Model ${model} unavailable, trying next fallback...`, "warning");
+    );
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      throw new Error(`Gemini API error (${geminiRes.status}): ${errText}`);
     }
-    if (!translatedText) throw new Error("All Gemini models are currently unavailable. Please retry in a few minutes.");
+    const geminiData = await geminiRes.json();
+    const translatedText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
     if (!translatedText) {
       throw new Error("Gemini returned an empty conversational translation transcript.");
     }
