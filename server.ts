@@ -352,9 +352,9 @@ Specifically, make sure to generate it in the colloquial style of: "${langCfg.st
 
 Return ONLY the clean, translated script text and absolutely nothing else (no timestamps, meta annotations, speaker headers, explanation paragraphs, or introduction labels). Just output the fluentTranslatedScript.`;
 
-    addLog(jobId, `📖 Prompting model ('gemini-2.0-flash') to perform conversational script trans-creation...`, "info");
+    addLog(jobId, `📖 Prompting model ('gemini-1.5-flash') to perform conversational script trans-creation...`, "info");
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
       contents: promptMessage,
     });
 
